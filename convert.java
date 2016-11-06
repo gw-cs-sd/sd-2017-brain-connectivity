@@ -92,6 +92,23 @@ public class convert {
 		pathLength = pathLength/(n*(n-1));
 		return pathLength;
 	}
+
+	public LinkedList<Integer> readCsv (File fCSV) {
+
+	}
+
+	public LinkedList<Integer> trimSubjects (LinkedList<Integer> l1, LinkedList<Integer> l2) {
+		// return elements in common
+		LinkedList<Integer> inCommon = new LinkedList<Integer>();
+
+		for (int i = 0; i < l1.size(); i++) {
+			if (l2.contains(l1.get(i))) {
+				inCommon.add(l1.get(i));
+			}
+		}
+
+		return inCommon;
+	}
 	
 	public static void main (String[] args) {
 		convert testthis = new convert();
@@ -107,12 +124,24 @@ public class convert {
 			double hopethisworks = testthis.correlationCoefficient(testArrayify);
 		}
 
+		// get subject IDs
+		File subjFile = new File("subjectIDs.txt");
+		LinkedList<String> subj1 = testthis.readIn(subjFile);
+		LinkedList<Integer> subjects1 = new LinkedList<Integer>();
+		for (int i = 0; i < subj1.size(); i++) {
+			String[] tryStr = testthis.breakElements(subj1.get(i));
+			subjects.add(Integer.valueOf(tryStr[0]));
+			System.out.println(subjects.get(i));
+		}
+
 		// get csv file
-		File f = new File("blah.csv");
+		File csvFile = new File("blah.csv");
 		csvify = testthis.readCsv(f);
-		
+		testthis.trimSubjects(subjects1, csvify);
+
 		// compare to CSV of behaviors
 		compareCorr(csvify, hopethisworks); // need to remove mismatched subject ids	
+	
 	}
 	// n x n matrix where n = square root of number of elements in one line
 
