@@ -1,5 +1,6 @@
 import java.util.*;
 import java.io.*;
+
 public class Brains {
 	int[] numNeighbors;
 	
@@ -43,7 +44,7 @@ public class Brains {
 			String line = null;
 			while ((line = br.readLine()) != null) {
 				if (line.contains("Subject")) {
-					String[] variables = line.split(" ");
+					String[] variables = line.split(splitBy);
 					for (int i = 0; i < variables.length; i++) {
 						varNames.add(variables[i]);
 					}
@@ -102,14 +103,14 @@ public class Brains {
 	}	
 
 	/*
-	 * This method calculates the correlation coefficient and characteristic path length of each node in the graph
+	 * This method calculates the clustering coefficient and characteristic path length of each node in the graph
 	 */	
-	public double correlationCoefficient (double[][] arrayed) {
+	public double clusteringCoefficient (double[][] arrayed) {
 		int n = arrayed.length;
 		int[] neighbors = new int[n];
 		int[] neighborEdges = new int[n];
 		LinkedList<Integer> checkThese = new LinkedList<Integer>();
-		double corrCo = 0;
+		double clusCo = 0;
 		double pathLength = 0;
 
 		int i = 0;
@@ -136,13 +137,13 @@ public class Brains {
 			}
 			checkThese.clear();
 			if (neighbors[i] > 1) {
-				corrCo += (2*neighborEdges[i])/(neighbors[i]*(neighbors[i]-1));
+				clusCo += (2*neighborEdges[i])/(neighbors[i]*(neighbors[i]-1));
 			}
 			i++;
 		}
-		corrCo = corrCo/n; 
+		clusCo = clusCo/n; 
 		pathLength = pathLength/(n*(n-1));
-		return pathLength; //return pathLength because the correlation coefficient is the same for every node in this dataset
+		return pathLength; //return pathLength because the clustering coefficient is the same for every node in this dataset
 	}
 
 	/*
@@ -160,23 +161,50 @@ public class Brains {
 
 		return inCommon;
 	}
+
+	public double correlation (LinkedList<Integer> subjects, HashMap<Integer, ArrayList<String>> data, HashMap<Integer, Double> smallWorld) {
+		// only look at subjects in subjects list
+		int n = subjects.size();
+		double r = 0;
+
+		for (int j = 0; j < 546; j++) {
+			double combSum = 0;
+			double plSum = 0;
+			double dSum = 0;	
+			r = 0;
+			double d = 0;
+			double pl = 0;
+			double dSquare = 0;
+			double plSquare = 0;
+			
+			for (int i = 0; i < n; i++) {
+				try { 
+					d = Double.valueOf(data.get(subjects.get(i)).get(j));
+				} catch (NumberFormatException e) {
+					System.out.print("Not number");
+					r = -10;
+					break;
+				}
+				dSum += d;
+				dSquare += Math.pow(d, 2);
+
+				pl = smallWorld.get(subjects.get(i));
+				plSum += pl;
+				plSquare += Math.pow(pl, 2);
+
+				combSum += d*pl;
+			}
+			combSum *= n;
+			double dDiff = Math.sqrt(n*dSquare - Math.pow(dSum, 2));
+			double plDiff = Math.sqrt(n*plSquare - Math.pow(plSum, 2));
+			r = (combSum - dSum*plSum)/(dDiff*plDiff);
+			System.out.println("r: " + r);
+		}
+		return r;	
+	}
 	
 	public static void main (String[] args) {
 		Brains brain = new Brains();
-
-		// split data into 2d arrays for calculations 
-		File f = new File("netmats2.txt");
-		LinkedList<String> brainCon = brain.readIn(f);
-		double correlCos = 0;
-
-		for (int i = 0; i < brainCon.size(); i++) {
-			String[] netmats = brain.breakElements(brainCon.get(i));
-			int netmatSize = (int) Math.sqrt(netmats.length);
-			double[][] netmatArr = brain.toArray(netmats, netmatSize);
-
-			// calculate correlation coefficient
-			correlCos = brain.correlationCoefficient(netmatArr);
-		}
 
 		// get subject IDs
 		File subjFile = new File("subjectIDs.txt");
@@ -186,14 +214,27 @@ public class Brains {
 			subjects1.add(Integer.valueOf(subj1.get(i)));
 		}
 
+		// split data into 2d arrays for calculations 
+		File f = new File("netmats2.txt");
+		LinkedList<String> brainCon = brain.readIn(f);
+		HashMap<Integer, Double> pLengths = new HashMap<Integer, Double>();
+
+		for (int i = 0; i < brainCon.size(); i++) {
+			String[] netmats = brain.breakElements(brainCon.get(i));
+			int netmatSize = (int) Math.sqrt(netmats.length);
+			double[][] netmatArr = brain.toArray(netmats, netmatSize);
+
+			// calculate correlation coefficient
+			pLengths.put(subjects1.get(i), brain.clusteringCoefficient(netmatArr));
+		}
+
 		// get csv file
 		File csvFile = new File("behavioral.csv");
 		HashMap<Integer, ArrayList<String>> behData = brain.readCsv(csvFile);
-		brain.trimSubjects(subjects1, behData);
-
+		LinkedList<Integer> subjects = brain.trimSubjects(subjects1, behData);
+		
 		// compare to CSV of behaviors
-//		brain.compareCorr(behData, correlCos);
-	
+		double corrs = brain.correlation(subjects, behData, pLengths);
 	}
 	// n x n matrix where n = square root of number of elements in one line
 
