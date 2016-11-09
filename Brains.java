@@ -236,8 +236,5 @@ public class Brains {
 		// compare to CSV of behaviors
 		double corrs = brain.correlation(subjects, behData, pLengths);
 	}
-	// n x n matrix where n = square root of number of elements in one line
-
-	// put values into 2d array?
 
 }
