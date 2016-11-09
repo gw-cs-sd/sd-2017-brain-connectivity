@@ -34,7 +34,7 @@ public class Brains {
 	}
 	
 	public HashMap<Integer, ArrayList<String>> readCsv (File fCSV) {
-		LinkedList<String> varNames = new LinkedList<String>(); // to hold the column names
+		ArrayList<String> varNames = new ArrayList<String>(); // to hold the column names
 		HashMap<Integer, ArrayList<String>> csvData = new HashMap<Integer, ArrayList<String>>(); //HashMap with subject ID as key and ArrayList of variables as value
 		BufferedReader br = null;
 		String splitBy = ",";
@@ -72,6 +72,7 @@ public class Brains {
 			}
 		
 		}
+		csvData.put(0, varNames);
 		return csvData;	
 	}
 
@@ -162,44 +163,45 @@ public class Brains {
 		return inCommon;
 	}
 
-	public double correlation (LinkedList<Integer> subjects, HashMap<Integer, ArrayList<String>> data, HashMap<Integer, Double> smallWorld) {
+	public double correlation (LinkedList<Integer> subjects, HashMap<Integer, ArrayList<String>> data, HashMap<Integer, Double> smallWorld, int varIndex) {
 		// only look at subjects in subjects list
+		// correlation coefficient definition from Wikipedia
 		int n = subjects.size();
 		double r = 0;
-
-		for (int j = 0; j < 546; j++) {
-			double combSum = 0;
-			double plSum = 0;
-			double dSum = 0;	
-			r = 0;
-			double d = 0;
-			double pl = 0;
-			double dSquare = 0;
-			double plSquare = 0;
+		double combSum = 0;
+		double plSum = 0;
+		double dSum = 0;	
+		double d = 0;
+		double pl = 0;
+		double dSquare = 0;
+		double plSquare = 0;
 			
-			for (int i = 0; i < n; i++) {
-				try { 
-					d = Double.valueOf(data.get(subjects.get(i)).get(j));
-				} catch (NumberFormatException e) {
-					System.out.print("Not number");
-					r = -10;
-					break;
+		for (int i = 0; i < n; i++) {
+			try { 
+				d = Double.valueOf(data.get(subjects.get(i)).get(varIndex));
+			} catch (NumberFormatException e) {
+				if (data.get(subjects.get(i)).get(varIndex).equals(" ")) {
+					continue;
+				} else {
+					return 10;
 				}
-				dSum += d;
-				dSquare += Math.pow(d, 2);
-
-				pl = smallWorld.get(subjects.get(i));
-				plSum += pl;
-				plSquare += Math.pow(pl, 2);
-
-				combSum += d*pl;
+			} catch (IndexOutOfBoundsException e) {
+				//System.out.println("i: " + i);
 			}
-			combSum *= n;
-			double dDiff = Math.sqrt(n*dSquare - Math.pow(dSum, 2));
-			double plDiff = Math.sqrt(n*plSquare - Math.pow(plSum, 2));
-			r = (combSum - dSum*plSum)/(dDiff*plDiff);
-			System.out.println("r: " + r);
+			dSum += d;
+			dSquare += Math.pow(d, 2);
+
+			pl = smallWorld.get(subjects.get(i));
+			plSum += pl;
+			plSquare += Math.pow(pl, 2);
+
+			combSum += d*pl;
 		}
+		combSum *= n;
+		double dDiff = Math.sqrt(n*dSquare - Math.pow(dSum, 2));
+		double plDiff = Math.sqrt(n*plSquare - Math.pow(plSum, 2));
+		r = (combSum - dSum*plSum)/(dDiff*plDiff);
+
 		return r;	
 	}
 	
@@ -218,7 +220,7 @@ public class Brains {
 		File f = new File("netmats2.txt");
 		LinkedList<String> brainCon = brain.readIn(f);
 		HashMap<Integer, Double> pLengths = new HashMap<Integer, Double>();
-
+		
 		for (int i = 0; i < brainCon.size(); i++) {
 			String[] netmats = brain.breakElements(brainCon.get(i));
 			int netmatSize = (int) Math.sqrt(netmats.length);
@@ -228,13 +230,36 @@ public class Brains {
 			pLengths.put(subjects1.get(i), brain.clusteringCoefficient(netmatArr));
 		}
 
+		 
 		// get csv file
-		File csvFile = new File("behavioral.csv");
+		File csvFile = new File("unrestricted_kvwalker_10_25_2016_19_32_30.csv");
 		HashMap<Integer, ArrayList<String>> behData = brain.readCsv(csvFile);
 		LinkedList<Integer> subjects = brain.trimSubjects(subjects1, behData);
 		
 		// compare to CSV of behaviors
-		double corrs = brain.correlation(subjects, behData, pLengths);
+		try (Writer br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("correlations.txt"), "utf-8"))) {
+			int numVars = behData.get(subjects.get(0)).size();
+			double[] corrs = new double[numVars];
+			for (int i = 0; i < numVars; i++) {
+				corrs[i] = brain.correlation(subjects, behData, pLengths, i);
+				if (Math.abs(corrs[i]) > 0.01 && Math.abs(corrs[i]) != Double.POSITIVE_INFINITY && corrs[i] != 10) {
+					try {
+						if (corrs[i] < 0) {
+							br.write("r: " + Double.toString(corrs[i]) + ", Variable: " + behData.get(0).get(i) + "\n");
+						} else {
+							br.write("r:  " + Double.toString(corrs[i]) + ", Variable: " + behData.get(0).get(i) + "\n");
+						}
+					} catch(IOException e) {}
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 }
