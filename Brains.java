@@ -1,9 +1,10 @@
 import java.util.*;
 import java.io.*;
+import javax.swing.*;
+import java.awt.*;
 
 public class Brains {
 	int[] numNeighbors;
-	
 	/* 
 	 * These methods process files
 	 */
@@ -220,12 +221,18 @@ public class Brains {
 		File f = new File("netmats2.txt");
 		LinkedList<String> brainCon = brain.readIn(f);
 		HashMap<Integer, Double> pLengths = new HashMap<Integer, Double>();
-		
+		int k = 0; Points points = new Points();
 		for (int i = 0; i < brainCon.size(); i++) {
 			String[] netmats = brain.breakElements(brainCon.get(i));
 			int netmatSize = (int) Math.sqrt(netmats.length);
 			double[][] netmatArr = brain.toArray(netmats, netmatSize);
-
+			int[] indivPoints = new int[netmats.length];
+			for (int j = 0; j < indivPoints.length; j++) {                        
+				indivPoints[j] = (int) (Double.valueOf(netmats[j]) * 1000);
+			}
+			//Color col = new Color(k, k, 255 - k);
+			//brain.plotConn(indivPoints, Color.RED);
+			k += 10;points.run(indivPoints, Color.RED);//figure out how to plot multiple lines on one frame and change color for each subject	
 			// calculate correlation coefficient
 			pLengths.put(subjects1.get(i), brain.clusteringCoefficient(netmatArr));
 		}
@@ -259,7 +266,33 @@ public class Brains {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
+/*		String[] indiv = brain.breakElements(brainCon.get(0));
+		int[] indivPoints = new int[indiv.length];
+		for (int i = 0; i < indiv.length; i++) {
+			indivPoints[i] = (int) (Double.valueOf(indiv[i]) * 1000);
+		}
+		brain.plotConn(indivPoints);
+*/
 	}
 
+	public void plotConn (int[] indiv, Color color) {
+	/*	JFrame frame = new JFrame("Individual 0");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		JLabel label = new JLabel("Individual 0 Connectome");
+		frame.getContentPane().add(label);
+		frame.pack();
+		frame.setVisible(true);
+		
+		super.paint(g);
+		int locX = Integer.valueOf(indiv[0]);
+		int locY = 0;
+		g.drawLine(locX, locY, locX, locY); */
+
+		Points points = new Points();
+		points.run(indiv, color); /*	JFrame frame = new JFrame("Indiv");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.add(points);
+		frame.setSize(5000, 5000);
+		frame.setVisible(true);*/
+	}
 }
