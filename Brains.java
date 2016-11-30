@@ -199,7 +199,7 @@ public class Brains {
 					return 10;
 				}
 			} catch (IndexOutOfBoundsException e) {
-				//System.out.println("i: " + i);
+				e.printStackTrace();
 			}
 			dSum += d;
 			dSquare += Math.pow(d, 2);
@@ -235,7 +235,7 @@ public class Brains {
 		HashMap<Integer, Double> swMeasures = new HashMap<Integer, Double>();
 		Points points = new Points();
 
-		for (int i = 765; i < subjects1.size(); i++) {
+		for (int i = 0; i < subjects1.size(); i++) {
 			int currentSubject = subjects1.get(i);
 
             // split data into 2d arrays for calculations
