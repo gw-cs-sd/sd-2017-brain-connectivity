@@ -5,7 +5,7 @@ import java.awt.*;
 
 public class Brains {
 	int[] numNeighbors;
-	/* 
+	/*
 	 * These methods process files
 	 */
 	public LinkedList<String> readIn (File fn) {
@@ -18,14 +18,14 @@ public class Brains {
 				lines.add(line);
 			}
 		} catch (FileNotFoundException e) {
-			e.printStackTrace(); 
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}	
+		}
 		finally {
 			try {
 				if (br != null) {
-					br.close(); 
+					br.close();
 				}
 			} catch (IOException e) {
 				e.printStackTrace();;
@@ -33,13 +33,13 @@ public class Brains {
 		}
 		return lines;
 	}
-	
+
 	public HashMap<Integer, ArrayList<String>> readCsv (File fCSV) {
 		ArrayList<String> varNames = new ArrayList<String>(); // to hold the column names
 		HashMap<Integer, ArrayList<String>> csvData = new HashMap<Integer, ArrayList<String>>(); //HashMap with subject ID as key and ArrayList of variables as value
 		BufferedReader br = null;
 		String splitBy = ",";
-		
+
 		try {
 			br = new BufferedReader(new FileReader(fCSV));
 			String line = null;
@@ -56,7 +56,7 @@ public class Brains {
 					for (int i = 1; i < splitLine.length; i++) {
 						csvData.get(id).add(splitLine[i]);
 					}
-				}		
+			    }
 			}
 
 		} catch (FileNotFoundException e) {
@@ -71,10 +71,10 @@ public class Brains {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		
+
 		}
 		csvData.put(0, varNames);
-		return csvData;	
+		return csvData;
 	}
 
 	/*
@@ -102,50 +102,62 @@ public class Brains {
 			}
 		}
 		return arrayify;
-	}	
+    }
 
 	/*
-	 * This method calculates the clustering coefficient and characteristic path length of each node in the graph
-	 */	
-	public double clusteringCoefficient (double[][] arrayed) {
+	 * This method calculates the clustering coefficient and characteristic path length of the graph
+	 */
+	public double smallWorldness (double[][] arrayed) {
 		int n = arrayed.length;
-		int[] neighbors = new int[n];
+		int[] degree = new int[n];
 		int[] neighborEdges = new int[n];
 		LinkedList<Integer> checkThese = new LinkedList<Integer>();
+		double[] pathLength = new double[n];
 		double clusCo = 0;
-		double pathLength = 0;
 
 		int i = 0;
 		while (i < n) {
+			pathLength[i] = 0;
 			for (int j = 0; j < n; j++) {
 				// finding neighbors of node i
 				if (arrayed[i][j] != 0) {
-					neighbors[i]++; // if there is a non-zero entry here, then j is a neighbor of i
+					degree[i]++; // if there is a non-zero entry here, then j is a neighbor of i
 					if (!checkThese.contains(j)) {
 						checkThese.add(j); // so add j to the list of nodes to check relationships between
 					}
 				}
 				if (i != j) {
-					pathLength += 1/(arrayed[i][j]);
+					pathLength[i] += arrayed[i][j];
 				}
-				// check relationships between neighbors of i here
 			}
+			pathLength[i] = pathLength[i]/degree[i];
+
+			// check number of edges between neighbors of i
 			for (int k = 0; k < checkThese.size(); k++) {
 				for (int m = k + 1; m < checkThese.size(); m++) {
-					if (arrayed[k][m] != 0) {
+					int check1 = checkThese.get(k);
+					int check2 = checkThese.get(m);
+					if (arrayed[check1][check2] != 0) {
 						neighborEdges[i]++;
 					}
 				}
 			}
 			checkThese.clear();
-			if (neighbors[i] > 1) {
-				clusCo += (2*neighborEdges[i])/(neighbors[i]*(neighbors[i]-1));
+			if (degree[i] > 1) { //catch divide by zero error if degree = 1
+				clusCo += (2*neighborEdges[i])/(degree[i]*(degree[i]-1));
 			}
 			i++;
 		}
-		clusCo = clusCo/n; 
-		pathLength = pathLength/(n*(n-1));
-		return pathLength; //return pathLength because the clustering coefficient is the same for every node in this dataset
+
+		double charPathLength = 0;
+		for (int p = 0; p < pathLength.length; p++) {
+			charPathLength += pathLength[p];
+		}
+		charPathLength = charPathLength/pathLength.length;
+
+		clusCo = clusCo/n; //clustering coefficient of the network is mean of clustering coefficient over all nodes
+
+		return clusCo/charPathLength; //small-world network has large clusCo and small pathLength
 	}
 
 	/*
@@ -157,7 +169,7 @@ public class Brains {
 
 		for (int i = 0; i < l1.size(); i++) {
 			if (l2.containsKey(l1.get(i))) {
-				inCommon.add(l1.get(i));				
+				inCommon.add(l1.get(i));
 			}
 		}
 
@@ -171,14 +183,14 @@ public class Brains {
 		double r = 0;
 		double combSum = 0;
 		double plSum = 0;
-		double dSum = 0;	
+		double dSum = 0;
 		double d = 0;
 		double pl = 0;
 		double dSquare = 0;
 		double plSquare = 0;
-			
+
 		for (int i = 0; i < n; i++) {
-			try { 
+			try {
 				d = Double.valueOf(data.get(subjects.get(i)).get(varIndex));
 			} catch (NumberFormatException e) {
 				if (data.get(subjects.get(i)).get(varIndex).equals(" ")) {
@@ -203,9 +215,9 @@ public class Brains {
 		double plDiff = Math.sqrt(n*plSquare - Math.pow(plSum, 2));
 		r = (combSum - dSum*plSum)/(dDiff*plDiff);
 
-		return r;	
+		return r;
 	}
-	
+
 	public static void main (String[] args) {
 		Brains brain = new Brains();
 
@@ -214,41 +226,46 @@ public class Brains {
 		LinkedList<String> subj1 = brain.readIn(subjFile);
 		LinkedList<Integer> subjects1 = new LinkedList<Integer>();
 		for (int i = 0; i < subj1.size(); i++) {
-			subjects1.add(Integer.valueOf(subj1.get(i)));
+                subjects1.add(Integer.valueOf(subj1.get(i)));
 		}
 
-		// split data into 2d arrays for calculations 
+		// get network matrices
 		File f = new File("netmats2.txt");
 		LinkedList<String> brainCon = brain.readIn(f);
-		HashMap<Integer, Double> pLengths = new HashMap<Integer, Double>();
-		int k = 0; Points points = new Points();
-		for (int i = 0; i < brainCon.size(); i++) {
+		HashMap<Integer, Double> swMeasures = new HashMap<Integer, Double>();
+		Points points = new Points();
+
+		for (int i = 765; i < subjects1.size(); i++) {
+			int currentSubject = subjects1.get(i);
+
+            // split data into 2d arrays for calculations
 			String[] netmats = brain.breakElements(brainCon.get(i));
 			int netmatSize = (int) Math.sqrt(netmats.length);
 			double[][] netmatArr = brain.toArray(netmats, netmatSize);
+
 			int[] indivPoints = new int[netmats.length];
-			for (int j = 0; j < indivPoints.length; j++) {                        
+			for (int j = 0; j < indivPoints.length; j++) {
 				indivPoints[j] = (int) (Double.valueOf(netmats[j]) * 1000);
 			}
-			//Color col = new Color(k, k, 255 - k);
-			//brain.plotConn(indivPoints, Color.RED);
-			k += 10;points.run(indivPoints, Color.RED);//figure out how to plot multiple lines on one frame and change color for each subject	
-			// calculate correlation coefficient
-			pLengths.put(subjects1.get(i), brain.clusteringCoefficient(netmatArr));
+
+			// plot each brain
+			points.run(currentSubject, indivPoints, Color.BLACK);
+
+			// calculate small-worldness for each subject
+			swMeasures.put(currentSubject, brain.smallWorldness(netmatArr));
 		}
 
-		 
 		// get csv file
 		File csvFile = new File("unrestricted_kvwalker_10_25_2016_19_32_30.csv");
 		HashMap<Integer, ArrayList<String>> behData = brain.readCsv(csvFile);
 		LinkedList<Integer> subjects = brain.trimSubjects(subjects1, behData);
-		
+
 		// compare to CSV of behaviors
 		try (Writer br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("correlations.txt"), "utf-8"))) {
 			int numVars = behData.get(subjects.get(0)).size();
 			double[] corrs = new double[numVars];
 			for (int i = 0; i < numVars; i++) {
-				corrs[i] = brain.correlation(subjects, behData, pLengths, i);
+				corrs[i] = brain.correlation(subjects, behData, swMeasures, i);
 				if (Math.abs(corrs[i]) > 0.01 && Math.abs(corrs[i]) != Double.POSITIVE_INFINITY && corrs[i] != 10) {
 					try {
 						if (corrs[i] < 0) {
@@ -266,33 +283,5 @@ public class Brains {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-/*		String[] indiv = brain.breakElements(brainCon.get(0));
-		int[] indivPoints = new int[indiv.length];
-		for (int i = 0; i < indiv.length; i++) {
-			indivPoints[i] = (int) (Double.valueOf(indiv[i]) * 1000);
-		}
-		brain.plotConn(indivPoints);
-*/
-	}
-
-	public void plotConn (int[] indiv, Color color) {
-	/*	JFrame frame = new JFrame("Individual 0");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		JLabel label = new JLabel("Individual 0 Connectome");
-		frame.getContentPane().add(label);
-		frame.pack();
-		frame.setVisible(true);
-		
-		super.paint(g);
-		int locX = Integer.valueOf(indiv[0]);
-		int locY = 0;
-		g.drawLine(locX, locY, locX, locY); */
-
-		Points points = new Points();
-		points.run(indiv, color); /*	JFrame frame = new JFrame("Indiv");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.add(points);
-		frame.setSize(5000, 5000);
-		frame.setVisible(true);*/
 	}
 }
