@@ -14,8 +14,8 @@ public class ColorBehavioral {
 
     public static void main (String[] args) throws IOException {
         // image code
-        int width = 11;
-        int height = 1;
+        int width = 50;
+        int height = 10;
 
         BufferedReader br = null;
         try {
