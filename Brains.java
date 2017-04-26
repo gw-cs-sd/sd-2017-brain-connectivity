@@ -238,7 +238,7 @@ public class Brains {
 		for (int i = 0; i < subjects1.size(); i++) {
 			int currentSubject = subjects1.get(i);
 
-            // split data into 2d arrays for calculations
+            		// split data into 2d arrays for calculations
 			String[] netmats = brain.breakElements(brainCon.get(i));
 			int netmatSize = (int) Math.sqrt(netmats.length);
 			double[][] netmatArr = brain.toArray(netmats, netmatSize);
