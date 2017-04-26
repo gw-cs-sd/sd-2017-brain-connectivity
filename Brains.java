@@ -127,6 +127,8 @@ public class Brains {
 					}
 				}
 				if (i != j) {
+					// all of the connectomes are dense so there are edges between every node i and j where i != j
+					// this is why we can simply add the weight of the edge between i and j to the pathLength
 					pathLength[i] += arrayed[i][j];
 				}
 			}
