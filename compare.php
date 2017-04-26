@@ -45,7 +45,10 @@
                 $smallWorld = $lines[$searchKey + 1];
                 if($searchKey !== NULL && $searchID !== NULL) :
               ?>
-                <h2 align="center" style="padding-bottom:25px">Related to <? echo $searchID; ?> (small world measure: <? echo($smallWorld); ?>)</h2>
+                <h2 align="center">Related to <? echo $searchID; ?></h2>
+                <h2 align="center" style="padding-bottom:25px">Small World Measure: <? echo($smallWorld); ?></h2>
+                <h2 align="center" style="padding-bottom:0px"><img src="pixelmaps/<?php echo $searchID; ?>map.jpg" width=300 height=25></h2>
+                <p style="padding-top:0px; color: black; font-size: 16px" align="center"><a href="#key">1&emsp; 2&emsp; 3&emsp; 4&emsp;&ensp;5&emsp; 6&emsp; 7&emsp; 8&emsp; 9&emsp; 10&emsp;  11</a></p>
                 <h2>
                   <table>
                     <thead> 
@@ -71,12 +74,15 @@
                         <tr>
                           <td><?php echo $row['subject']; ?></td>
                           <td><?php echo $row['score']; ?></td>
+                          <td><img src="pixelmaps/<?php echo $row['subject']; ?>map.jpg" width=300 height=25></td>
                         </tr>
                         <?php } ?>
                       </tr>
                     </tbody>
                   </table>
                 </h2>
+                <p id="key" style="color: black; font-size: 17px;" align="center">1. Gender &nbsp;2. PicVocab &nbsp;3. ProcSpeed  &nbsp;4. AngAffect  &nbsp;5. AngHostile  &nbsp;6. FearAffect  &nbsp;7. FearSomatic  &nbsp;8. Sadness  &nbsp;9. Life Satisfaction  &nbsp;10. Friendship  &nbsp;11. Loneliness</p>
+
               <?php else : ?>
                 <h1 align="center">The subject ID you entered does not correspond to a subject in this dataset.</h1>
               <?php endif; ?>
